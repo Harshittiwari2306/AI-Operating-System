@@ -5,7 +5,9 @@ pydantic-settings==2.5.2
 SQLAlchemy==2.0.36
 psycopg[binary]==3.2.3
 python-jose[cryptography]==3.3.0
-pwdlib==0.2.1
+
+pwdlib[argon2]==0.2.1
+
 python-multipart==0.0.12
 alembic==1.13.3
 openai==1.51.0
