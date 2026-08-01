@@ -1,83 +1,95 @@
 import os
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.database import engine, Base
+from app.database import Base, engine
 
-# Import all routers
+# Routers
 from app.routers import (
+    admin,
     auth,
-    dashboard,
-    tasks,
     calendar,
-    study,
-    notes,
-    rag,
     chat,
+    dashboard,
     finance,
     habits,
     mood,
-    productivity,
-    recommendations,
-    admin,
-    voice,
+    notes,
     notifications,
+    productivity,
+    rag,
+    recommendations,
+    study,
+    tasks,
+    voice,
 )
 
+# --------------------------------------------------
 # Create database tables
+# --------------------------------------------------
 try:
     Base.metadata.create_all(bind=engine)
+    print("Database connected successfully.")
 except Exception as e:
-    print(f"Error creating database tables: {e}")
+    print("Database Error:", e)
 
+# --------------------------------------------------
+# FastAPI App
+# --------------------------------------------------
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="The intelligent backend engine for Project Genesis AI OS",
+    description="Project Genesis AI Operating System",
     version="1.0.0",
 )
 
-# -----------------------------
-# CORS Configuration
-# -----------------------------
-origins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "https://ai-operating-system-hlp7bzudx-codingwithself45-1565s-projects.vercel.app",
-]
-
+# --------------------------------------------------
+# CORS
+# --------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+
+    # Allow localhost + ALL vercel deployments
+    allow_origin_regex=r"https://.*\.vercel\.app",
+
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],
+
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# -----------------------------
+# --------------------------------------------------
 # Global Exception Handler
-# -----------------------------
+# --------------------------------------------------
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    print("=" * 60)
-    print("UNHANDLED ERROR")
+async def global_exception_handler(
+    request: Request,
+    exc: Exception,
+):
+    print("=" * 70)
+    print("UNHANDLED EXCEPTION")
     print(type(exc).__name__)
     print(str(exc))
-    print("=" * 60)
+    print("=" * 70)
 
     return JSONResponse(
         status_code=500,
         content={
             "error": type(exc).__name__,
-            "message": str(exc)
+            "message": str(exc),
         },
     )
 
-# -----------------------------
-# Static Files
-# -----------------------------
+# --------------------------------------------------
+# Upload Folder
+# --------------------------------------------------
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 app.mount(
@@ -86,9 +98,9 @@ app.mount(
     name="static",
 )
 
-# -----------------------------
-# API Routers
-# -----------------------------
+# --------------------------------------------------
+# API Routes
+# --------------------------------------------------
 app.include_router(auth.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
@@ -106,13 +118,19 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(voice.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 
-# -----------------------------
-# Root Endpoint
-# -----------------------------
+# --------------------------------------------------
+# Health Check
+# --------------------------------------------------
 @app.get("/")
-def read_root():
+def root():
     return {
         "status": "online",
         "system": settings.PROJECT_NAME,
-        "message": "Welcome to Project Genesis AI Operating System. Use /docs for API Explorer."
+        "message": "Project Genesis Backend Running"
+    }
+
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy"
     }
