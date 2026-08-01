@@ -4,7 +4,8 @@ import axios from 'axios';
 const AuthContext = createContext(null);
 
 // Configure axios base URL to standard FastAPI port
-axios.defaults.baseURL = 'http://localhost:8000';
+axios.defaults.baseURL =
+  import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Add request interceptor to automatically insert authorization token
 axios.interceptors.request.use((config) => {
