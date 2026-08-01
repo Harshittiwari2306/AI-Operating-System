@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
 from app.config import settings
 from app.database import engine, Base
 
@@ -25,7 +26,7 @@ from app.routers import (
     notifications,
 )
 
-# Automatically create database tables (SQLite fallback setup)
+# Create database tables
 try:
     Base.metadata.create_all(bind=engine)
 except Exception as e:
@@ -37,20 +38,37 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Enable CORS for frontend integration
+# -----------------------------
+# CORS Configuration
+# -----------------------------
+origins = [
+    "http://localhost:5173",   # Local Vite
+    "http://localhost:3000",   # Local React
+    "https://ai-operating-system-hlp7bzudx-codingwithself45-1565s-projects.vercel.app",  # Vercel
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust in production
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Serve uploaded note images static assets
+# -----------------------------
+# Static Files
+# -----------------------------
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-app.mount("/static", StaticFiles(directory=settings.UPLOAD_DIR), name="static")
 
-# Register all API endpoints
+app.mount(
+    "/static",
+    StaticFiles(directory=settings.UPLOAD_DIR),
+    name="static",
+)
+
+# -----------------------------
+# API Routers
+# -----------------------------
 app.include_router(auth.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
@@ -68,6 +86,9 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(voice.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 
+# -----------------------------
+# Root Endpoint
+# -----------------------------
 @app.get("/")
 def read_root():
     return {
