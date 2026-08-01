@@ -1,7 +1,8 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import engine, Base
@@ -42,9 +43,9 @@ app = FastAPI(
 # CORS Configuration
 # -----------------------------
 origins = [
-    "http://localhost:5173",   # Local Vite
-    "http://localhost:3000",   # Local React
-    "https://ai-operating-system-hlp7bzudx-codingwithself45-1565s-projects.vercel.app",  # Vercel
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://ai-operating-system-hlp7bzudx-codingwithself45-1565s-projects.vercel.app",
 ]
 
 app.add_middleware(
@@ -54,6 +55,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# -----------------------------
+# Global Exception Handler
+# -----------------------------
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print("=" * 60)
+    print("UNHANDLED ERROR")
+    print(type(exc).__name__)
+    print(str(exc))
+    print("=" * 60)
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": type(exc).__name__,
+            "message": str(exc)
+        },
+    )
 
 # -----------------------------
 # Static Files
